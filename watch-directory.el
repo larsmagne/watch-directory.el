@@ -33,18 +33,20 @@
 	timer)
     (setq timer
 	  (run-at-time
-	   1 10
+	   1 1
 	   (lambda ()
-	     (message "Scanning %s for %s" directory buffer)
 	     (if (not (buffer-live-p buffer))
 		 (cancel-timer timer)
 	       (dolist (file (directory-files directory t))
-		 (unless (member file files)
+		 (when (and (not (member file files))
+			    (string-match ".JPG$" file))
 		   (with-current-buffer buffer
 		     (save-excursion
 		       (goto-char (point-max))
-		       (let ((point (point)))
-			 (insert "<img src=%S>\n\n" file)
+		       (let ((point (point))
+			     (edges (window-inside-pixel-edges
+				     (get-buffer-window (current-buffer)))))
+			 (insert (format "<img src=%S>\n\n" file))
 			 (put-image
 			  (create-image
 			   file 'imagemagick nil
@@ -54,7 +56,9 @@
 			   :max-height
 			   (truncate
 			    (* 0.5 (- (nth 3 edges) (nth 1 edges)))))
-			  point))))))))))))
+			  point))))
+		   (push file files)))))))
+    timer))
 
 (provide 'watch-directory)
 
