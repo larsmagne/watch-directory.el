@@ -39,7 +39,9 @@
 		 (cancel-timer timer)
 	       (dolist (file (directory-files directory t))
 		 (when (and (not (member file files))
-			    (string-match ".JPG$" file))
+			    (string-match ".JPG$" file)
+			    (plusp (file-attribute-size
+				    (file-attributes file))))
 		   (with-current-buffer buffer
 		     (save-excursion
 		       (goto-char (point-max))
