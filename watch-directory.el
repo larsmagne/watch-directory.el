@@ -30,7 +30,7 @@
   (interactive "DDirectory to watch: ")
   (let ((files (directory-files directory t))
 	(buffer (current-buffer))
-	timer)
+	timer new)
     (setq timer
 	  (run-at-time
 	   1 1
@@ -42,14 +42,17 @@
 			    (string-match ".JPG$" file)
 			    (plusp (file-attribute-size
 				    (file-attributes file))))
+		   (setq new (expand-file-name (file-name-nondirectory file)
+					       "/tmp"))
+		   (call-process "convert" nil nil nil
+				 "-scale" "2048x"
+				 file new)
 		   (with-current-buffer buffer
-		     (save-excursion
-		       (goto-char (point-max))
-		       (let ((point (point))
-			     (edges (window-inside-pixel-edges
-				     (get-buffer-window (current-buffer)))))
-			 (insert (format "<img src=%S>\n\n" file))
-			 (put-image
+		     (let ((edges (window-inside-pixel-edges
+				   (get-buffer-window (current-buffer)))))
+		       (save-excursion
+			 (goto-char (point-max))
+			 (insert-image
 			  (create-image
 			   file 'imagemagick nil
 			   :max-width
@@ -58,7 +61,8 @@
 			   :max-height
 			   (truncate
 			    (* 0.5 (- (nth 3 edges) (nth 1 edges)))))
-			  point))))
+			  (format "<img src=%S>" new))
+			 (insert "\n\n"))))
 		   (push file files)))))))
     timer))
 
