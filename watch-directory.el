@@ -25,6 +25,8 @@
 
 ;;; Code:
 
+(defvar watch-directory-rescale nil)
+
 (defun watch-directory (directory)
   "Watch DIRECTORY for new files and insert them in the buffer when they appear."
   (interactive "DDirectory to watch: ")
@@ -42,11 +44,17 @@
 			    (string-match ".JPG$" file)
 			    (plusp (file-attribute-size
 				    (file-attributes file))))
-		   (setq new (expand-file-name (file-name-nondirectory file)
-					       "/tmp"))
-		   (call-process "convert" nil nil nil
-				 "-scale" "2048x"
-				 file new)
+		   (if watch-directory-rescale
+		       (progn
+			 (setq new (expand-file-name (file-name-nondirectory file)
+						     "/tmp"))
+			 (call-process "convert" nil nil nil
+				       "-scale" "2048x"
+				       file new))
+		     (setq new (expand-file-name (file-name-nondirectory file)
+						 "/tmp"))
+		     (call-process "/home/larsi/bin/enrich" nil nil nil
+				   file new))
 		   (with-current-buffer buffer
 		     (let ((edges (window-inside-pixel-edges
 				   (get-buffer-window (current-buffer)))))
@@ -62,7 +70,7 @@
 			   (truncate
 			    (* 0.5 (- (nth 3 edges) (nth 1 edges)))))
 			  (format "<img src=%S>" new))
-			 (insert "\n\n"))))
+			 (insert "\n\n\n\n"))))
 		   (push file files)))))))
     timer))
 
