@@ -27,6 +27,13 @@
 
 (defvar watch-directory-rescale nil)
 
+(defun watch-directory--image-type ()
+  (if (or (and (fboundp 'image-scaling-p)
+	       (image-scaling-p))
+	  (not (fboundp 'imagemagick-types)))
+      nil
+    'imagemagick))
+
 (defun watch-directory (directory)
   "Watch DIRECTORY for new files and insert them in the buffer when they appear."
   (interactive "DDirectory to watch: ")
@@ -62,7 +69,7 @@
 			 (goto-char (point-max))
 			 (insert-image
 			  (create-image
-			   file 'imagemagick nil
+			   file (watch-directory--image-type) nil
 			   :max-width
 			   (truncate
 			    (* 0.7 (- (nth 2 edges) (nth 0 edges))))
