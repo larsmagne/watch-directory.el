@@ -34,8 +34,9 @@
       nil
     'imagemagick))
 
-(defun watch-directory (directory)
-  "Watch DIRECTORY for new files and insert them in the buffer when they appear."
+(defun watch-directory (directory &optional match)
+  "Watch DIRECTORY for new files and insert them in the buffer when they appear.
+If MATCH, insert the files that match this name.  Defaults to .JPG."
   (interactive "DDirectory to watch: ")
   (let ((files (directory-files directory t))
 	(buffer (current-buffer))
@@ -48,20 +49,17 @@
 		 (cancel-timer timer)
 	       (dolist (file (directory-files directory t))
 		 (when (and (not (member file files))
-			    (string-match ".JPG$" file)
+			    (string-match (or match ".JPG$")
+					  (file-name-nondirectory file))
 			    (plusp (file-attribute-size
 				    (file-attributes file))))
-		   (if watch-directory-rescale
-		       (progn
-			 (setq new (expand-file-name (file-name-nondirectory file)
-						     "/tmp"))
-			 (call-process "convert" nil nil nil
-				       "-scale" "2048x"
-				       file new))
+		   (when watch-directory-rescale
 		     (setq new (expand-file-name (file-name-nondirectory file)
 						 "/tmp"))
-		     (call-process "/home/larsi/bin/enrich" nil nil nil
-				   file new))
+		     (call-process "convert" nil nil nil
+				   "-scale" "2048x"
+				   file new)
+		     (setq file new))
 		   (with-current-buffer buffer
 		     (let ((edges (window-inside-pixel-edges
 				   (get-buffer-window (current-buffer)))))
@@ -72,12 +70,13 @@
 			   file (watch-directory--image-type) nil
 			   :max-width
 			   (truncate
-			    (* 0.7 (- (nth 2 edges) (nth 0 edges))))
+			    (* 0.9 (- (nth 2 edges) (nth 0 edges))))
 			   :max-height
 			   (truncate
 			    (* 0.5 (- (nth 3 edges) (nth 1 edges)))))
-			  (format "<img src=%S>" new))
-			 (insert "\n\n\n\n"))))
+			  (format "<img src=%S>" file))
+			 (insert "\n\n"))))
+		   ;; Keep track of the inserted files.
 		   (push file files)))))))
     timer))
 
