@@ -28,8 +28,8 @@
 (defvar watch-directory-rescale nil)
 
 (defun watch-directory--image-type ()
-  (if (or (and (fboundp 'image-scaling-p)
-	       (image-scaling-p))
+  (if (or (and (fboundp 'image-transforms-p)
+	       (image-transforms-p))
 	  (not (fboundp 'imagemagick-types)))
       nil
     'imagemagick))
