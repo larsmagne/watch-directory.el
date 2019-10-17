@@ -27,6 +27,8 @@
 
 (defvar watch-directory-rescale nil)
 
+(defvar watch-directory-trim t)
+
 (defun watch-directory--image-type ()
   (if (or (and (fboundp 'image-transforms-p)
 	       (image-transforms-p))
@@ -53,12 +55,17 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 					  (file-name-nondirectory file))
 			    (plusp (file-attribute-size
 				    (file-attributes file))))
-		   (when watch-directory-rescale
+		   (when (or watch-directory-rescale
+			     watch-directory-trim)
 		     (setq new (expand-file-name (file-name-nondirectory file)
 						 "/tmp"))
-		     (call-process "convert" nil nil nil
-				   "-scale" "2048x"
-				   file new)
+		     (apply #'call-process
+			    `("convert" nil nil nil
+			      ,@(if watch-directory-rescale '("-scale" "2048x"))
+			      ,@(if watch-directory-trim
+				    '("-trim" "-fuzz" "4%"))
+			      ,file ,new))
+		     (push file files)
 		     (setq file new))
 		   (with-current-buffer buffer
 		     (let ((edges (window-inside-pixel-edges
