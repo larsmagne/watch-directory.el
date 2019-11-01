@@ -29,6 +29,8 @@
 
 (defvar watch-directory-trim t)
 
+(defvar watch-directory-trim-fuzz "4%")
+
 (defun watch-directory--image-type ()
   (if (or (and (fboundp 'image-transforms-p)
 	       (image-transforms-p))
@@ -36,11 +38,13 @@
       nil
     'imagemagick))
 
-(defun watch-directory (directory &optional match)
+(defun watch-directory (directory &optional match no-ignore-existing)
   "Watch DIRECTORY for new files and insert them in the buffer when they appear.
 If MATCH, insert the files that match this name.  Defaults to .JPG."
   (interactive "DDirectory to watch: ")
-  (let ((files (directory-files directory t))
+  (let ((files (if no-ignore-existing
+		   nil
+		 (directory-files directory t)))
 	(buffer (current-buffer))
 	timer new)
     (setq timer
@@ -63,7 +67,8 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 			    `("convert" nil nil nil
 			      ,@(if watch-directory-rescale '("-scale" "2048x"))
 			      ,@(if watch-directory-trim
-				    '("-trim" "-fuzz" "4%"))
+				    (list "-trim" "-fuzz"
+					  watch-directory-trim-fuzz))
 			      ,file ,new))
 		     (push file files)
 		     (setq file new))
