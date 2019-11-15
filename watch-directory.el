@@ -82,10 +82,10 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 			   file (watch-directory--image-type) nil
 			   :max-width
 			   (truncate
-			    (* 0.9 (- (nth 2 edges) (nth 0 edges))))
+			    (* 0.95 (- (nth 2 edges) (nth 0 edges))))
 			   :max-height
 			   (truncate
-			    (* 0.5 (- (nth 3 edges) (nth 1 edges)))))
+			    (* 0.7 (- (nth 3 edges) (nth 1 edges)))))
 			  (format "<img src=%S>" file))
 			 (insert "\n\n"))))
 		   ;; Keep track of the inserted files.
