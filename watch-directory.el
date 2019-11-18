@@ -38,7 +38,8 @@
       nil
     'imagemagick))
 
-(defun watch-directory (directory &optional match no-ignore-existing)
+(defun watch-directory (directory &optional match no-ignore-existing
+				  separator)
   "Watch DIRECTORY for new files and insert them in the buffer when they appear.
 If MATCH, insert the files that match this name.  Defaults to .JPG."
   (interactive "DDirectory to watch: ")
@@ -74,7 +75,7 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 		     (setq file new))
 		   (with-current-buffer buffer
 		     (let ((edges (window-inside-pixel-edges
-				   (get-buffer-window (current-buffer)))))
+				   (get-buffer-window (current-buffer) t))))
 		       (save-excursion
 			 (goto-char (point-max))
 			 (insert-image
@@ -87,7 +88,9 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 			   (truncate
 			    (* 0.7 (- (nth 3 edges) (nth 1 edges)))))
 			  (format "<img src=%S>" file))
-			 (insert "\n\n"))))
+			 (insert "\n\n")
+			 (when separator
+			   (insert separator)))))
 		   ;; Keep track of the inserted files.
 		   (push file files)))))))
     timer))
