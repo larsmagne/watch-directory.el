@@ -62,8 +62,9 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 				    (file-attributes file))))
 		   (when (or watch-directory-rescale
 			     watch-directory-trim)
-		     (setq new (expand-file-name (file-name-nondirectory file)
-						 "/tmp"))
+		     (setq new (watch-directory-uniqify
+				(expand-file-name (file-name-nondirectory file)
+						  "/tmp")))
 		     (apply #'call-process
 			    `("convert" nil nil nil
 			      ,@(if watch-directory-rescale '("-scale" "2048x"))
@@ -94,6 +95,13 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 		   ;; Keep track of the inserted files.
 		   (push file files)))))))
     timer))
+
+(defun watch-directory-uniqify (file)
+  (let ((num 2))
+    (while (file-exists-p file)
+      (setq file (replace-regexp-in-string "[.]" (format "-%d." num) file))
+      (cl-incf num)))
+  file)
 
 (provide 'watch-directory)
 
