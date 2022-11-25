@@ -25,6 +25,8 @@
 
 ;;; Code:
 
+(require 'meme)
+
 (defvar watch-directory-rescale nil)
 
 (defvar watch-directory-trim t)
@@ -111,52 +113,13 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
     (or watch-directory--crop-factor
 	(and
 	 watch-directory-trim
-	 (let ((crops nil)
-	       (files (seq-take (directory-files dir t match) 10)))
-	   (dolist (file files)
-	     (with-temp-buffer
-	       (call-process
-		"convert" nil t nil
-		"-trim" "-fuzz" watch-directory-trim-fuzz
-		file "info:-")
-	       (let* ((data (seq-take
-			     (nreverse
-			      (seq-take (nreverse
-					 (split-string (string-trim
-							(buffer-string))))
-					7))
-			     2))
-		      (left (string-to-number (nth 1 (split-string (cadr data)
-								   "\\+"))))
-		      (top (string-to-number (nth 2 (split-string (cadr data)
-								  "\\+"))))
-		      (width (string-to-number
-			      (car (split-string (car data) "x"))))
-
-		      (height (string-to-number
-			       (cadr (split-string (car data) "x")))))
-		 (push (list width height left top) crops))))
-	   ;; We now have a number of crops -- pick the most likely
-	   ;; one.  Sort by width first.
-	   (setq crops (sort crops
-			     (lambda (c1 c2)
-			       (< (car c1) (car c2)))))
-	   ;; Pick the ones with the median size.
-	   (let* ((m (nth (/ (length crops) 2) crops))
-		  (median (* (car m) (cadr m))))
-	     (setq crops (seq-filter (lambda (c)
-				       (= (* (car c) (cadr c)) median))
-				     crops)))
-	   ;; Pick the median offset.
-	   (setq crops (sort crops
-			     (lambda (c1 c2)
-			       (< (nth 2 c1) (nth 2 c2)))))
-	   (let ((crop (nth (/ (length crops) 2) crops)))
-	     ;; If we have a reasonable number of files, then cache the
-	     ;; results.
-	     (when (> (length files) 9)
-	       (setq-local watch-directory--crop-factor crop))
-	     crop))))))
+	 (let* ((files (seq-take (directory-files dir t match) 10))
+		(crop (meme--find-crop files)))
+	   ;; If we have a reasonable number of files, then cache the
+	   ;; results.
+	   (when (> (length files) 9)
+	     (setq-local watch-directory--crop-factor crop))
+	   crop)))))
 
 (defun watch-directory-uniqify (file)
   (let ((num 2))
