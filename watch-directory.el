@@ -124,7 +124,8 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 (defun watch-directory-uniqify (file)
   (let ((num 2))
     (while (file-exists-p file)
-      (setq file (replace-regexp-in-string "[.]" (format "-%d." num) file))
+      (setq file (replace-regexp-in-string "\\(-[0-9]+\\)?[.]"
+					   (format "-%d." num) file))
       (cl-incf num)))
   file)
 
