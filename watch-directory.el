@@ -61,11 +61,12 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 			    (string-match (or match ".JPG$")
 					  (file-name-nondirectory file))
 			    (plusp (file-attribute-size
-				    (file-attributes file))))
+				    (file-attributes file)))
+			    (watch-directory--file-complete-p file))
 		   (when (or watch-directory-rescale
 			     watch-directory-trim)
 		     (let ((crop (watch-directory--find-crop
-				  buffer directory (or match ".JPG$"))))
+				  buffer directory (or match "[.]jpg$"))))
 		       (setq new (watch-directory-uniqify
 				  (expand-file-name
 				   (file-name-nondirectory file) "/tmp")))
@@ -89,6 +90,7 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 				   (get-buffer-window (current-buffer) t))))
 		       (save-excursion
 			 (goto-char (point-max))
+			 (ensure-empty-lines 1)
 			 (insert-image
 			  (create-image
 			   file (watch-directory--image-type) nil
@@ -105,6 +107,12 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 		   ;; Keep track of the inserted files.
 		   (push file files)))))))
     timer))
+
+(defun watch-directory--file-complete-p (file)
+;;  (copy-file file "/tmp/lala.jpg" t)
+  (with-temp-buffer
+    (zerop (call-process "identify" nil t nil
+			 "-regard-warnings" file))))
 
 (defvar-local watch-directory--crop-factor nil)
 
