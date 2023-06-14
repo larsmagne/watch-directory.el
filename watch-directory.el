@@ -66,7 +66,8 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 		   (when (or watch-directory-rescale
 			     watch-directory-trim)
 		     (let ((crop (watch-directory--find-crop
-				  buffer directory (or match "[.]jpg$"))))
+				  buffer directory (or match "[.]jpg$")
+				  files)))
 		       (setq new (watch-directory-uniqify
 				  (expand-file-name
 				   (file-name-nondirectory file) "/tmp")))
@@ -90,7 +91,14 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 				   (get-buffer-window (current-buffer) t))))
 		       (save-excursion
 			 (goto-char (point-max))
-			 (ensure-empty-lines 1)
+			 ;; If we're just after an image, leave
+			 ;; several empty lines (to type in).  If not,
+			 ;; just one empty line.
+			 (if (save-excursion
+			       (and (re-search-backward "^[^\n]" nil t)
+				    (looking-at "<img")))
+			     (ensure-empty-lines 3)
+			   (ensure-empty-lines 1))
 			 (insert-image
 			  (create-image
 			   file (watch-directory--image-type) nil
@@ -116,12 +124,14 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 
 (defvar-local watch-directory--crop-factor nil)
 
-(defun watch-directory--find-crop (buffer dir match)
+(defun watch-directory--find-crop (buffer dir match ignore-files)
   (with-current-buffer buffer
     (or watch-directory--crop-factor
 	(and
 	 watch-directory-trim
-	 (let* ((files (seq-take (directory-files dir t match) 10))
+	 (let* ((files (seq-take (seq-difference (directory-files dir t match)
+						 ignore-files)
+				 10))
 		(crop (meme--find-crop files)))
 	   ;; If we have a reasonable number of files, then cache the
 	   ;; results.
