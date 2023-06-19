@@ -124,15 +124,16 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 
 (defvar-local watch-directory--crop-factor nil)
 
-(defun watch-directory--find-crop (buffer dir match ignore-files)
+(defun watch-directory--find-crop (buffer dir match &optional ignore-files)
   (with-current-buffer buffer
     (or watch-directory--crop-factor
 	(and
 	 watch-directory-trim
-	 (let* ((files (seq-take (seq-difference (directory-files dir t match)
-						 ignore-files)
-				 10))
-		(crop (meme--find-crop files)))
+	 (when-let* ((files (seq-take (seq-difference
+				       (directory-files dir t match)
+				       ignore-files)
+				      10))
+		     (crop (meme--find-crop files)))
 	   ;; If we have a reasonable number of files, then cache the
 	   ;; results.
 	   (when (> (length files) 9)
