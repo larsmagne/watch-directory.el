@@ -28,9 +28,6 @@
 (require 'meme)
 
 (defvar watch-directory-rescale nil)
-
-(defvar watch-directory-trim t)
-
 (defvar watch-directory-trim-fuzz "4%")
 
 (defun watch-directory--image-type ()
@@ -41,7 +38,7 @@
     'imagemagick))
 
 (defun watch-directory (directory &optional match no-ignore-existing
-				  separator)
+				  separator trim)
   "Watch DIRECTORY for new files and insert them in the buffer when they appear.
 If MATCH, insert the files that match this name.  Defaults to .JPG."
   (interactive "DDirectory to watch: ")
@@ -63,11 +60,11 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 			    (plusp (file-attribute-size
 				    (file-attributes file)))
 			    (watch-directory--file-complete-p file))
-		   (when (or watch-directory-rescale
-			     watch-directory-trim)
-		     (let ((crop (watch-directory--find-crop
-				  buffer directory (or match "[.]jpg$")
-				  files)))
+		   (when (or watch-directory-rescale trim)
+		     (let ((crop (and trim
+				      (watch-directory--find-crop
+				       buffer directory (or match "[.]jpg$")
+				       files))))
 		       (setq new (watch-directory-uniqify
 				  (expand-file-name
 				   (file-name-nondirectory file) "/tmp")))
@@ -75,7 +72,7 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 			#'call-process
 			`("convert" nil nil nil
 			  ,@(if watch-directory-rescale '("-scale" "2048x"))
-			  ,@(if watch-directory-trim
+			  ,@(if trim
 				(if crop
 				    ;; If we have a crop factor, use it.
 				    (list "-crop"
@@ -127,18 +124,16 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 (defun watch-directory--find-crop (buffer dir match &optional ignore-files)
   (with-current-buffer buffer
     (or watch-directory--crop-factor
-	(and
-	 watch-directory-trim
-	 (when-let* ((files (seq-take (seq-difference
-				       (directory-files dir t match)
-				       ignore-files)
-				      10))
-		     (crop (meme--find-crop files)))
-	   ;; If we have a reasonable number of files, then cache the
-	   ;; results.
-	   (when (> (length files) 9)
-	     (setq-local watch-directory--crop-factor crop))
-	   crop)))))
+	(when-let* ((files (seq-take (seq-difference
+				      (directory-files dir t match)
+				      ignore-files)
+				     10))
+		    (crop (meme--find-crop files)))
+	  ;; If we have a reasonable number of files, then cache the
+	  ;; results.
+	  (when (> (length files) 9)
+	    (setq-local watch-directory--crop-factor crop))
+	  crop))))
 
 (defun watch-directory-uniqify (file)
   (let ((num 2))
