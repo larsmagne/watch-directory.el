@@ -97,10 +97,20 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 				    (looking-at "<img")))
 			     (ensure-empty-lines 3)
 			   (ensure-empty-lines 1))
-			 (let ((start (point)))
+			 (let ((start (point))
+			       ;; Emacs can get really slow when
+			       ;; displaying large images.  So resize
+			       ;; and display a smaller one instead.
+			       (smaller-file
+				(concat
+				 (make-temp-name "/tmp/wd-")
+				 (file-name-nondirectory file))))
+			   (call-process "convert" nil nil nil
+					 "-resize" "800x"
+					 file smaller-file)
 			   (insert-image
 			    (create-image
-			     file (watch-directory--image-type) nil
+			     smaller-file (watch-directory--image-type) nil
 			     :max-width
 			     (truncate
 			      (* 0.95 (- (nth 2 edges) (nth 0 edges))))
@@ -108,7 +118,8 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 			     (truncate
 			      (* 0.7 (- (nth 3 edges) (nth 1 edges)))))
 			    (format "<img src=%S>" file))
-			   (put-text-property start (point) 'help-echo file))
+			   (put-text-property start (point) 'help-echo file)
+			   (put-text-property start (point) 'original-image file))
 			 (insert "\n\n")
 			 (when separator
 			   (insert separator)))))
