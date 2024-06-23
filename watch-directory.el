@@ -42,11 +42,12 @@
   "Watch DIRECTORY for new files and insert them in the buffer when they appear.
 If MATCH, insert the files that match this name.  Defaults to .JPG."
   (interactive "DDirectory to watch: ")
-  (let ((files (if no-ignore-existing
-		   nil
-		 (directory-files directory t)))
-	(buffer (current-buffer))
-	timer new)
+  (let* ((files (if no-ignore-existing
+		    nil
+		  (directory-files directory t)))
+	 (buffer (current-buffer))
+	 (orig-files files)
+	 timer new)
     (setq timer
 	  (run-at-time
 	   1 1
@@ -64,7 +65,7 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 		     (let ((crop (and trim
 				      (watch-directory--find-crop
 				       buffer directory (or match "[.]jpg$")
-				       files))))
+				       orig-files))))
 		       (setq new (watch-directory-uniqify
 				  (expand-file-name
 				   (file-name-nondirectory file) "/tmp")))
@@ -96,16 +97,18 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 				    (looking-at "<img")))
 			     (ensure-empty-lines 3)
 			   (ensure-empty-lines 1))
-			 (insert-image
-			  (create-image
-			   file (watch-directory--image-type) nil
-			   :max-width
-			   (truncate
-			    (* 0.95 (- (nth 2 edges) (nth 0 edges))))
-			   :max-height
-			   (truncate
-			    (* 0.7 (- (nth 3 edges) (nth 1 edges)))))
-			  (format "<img src=%S>" file))
+			 (let ((start (point)))
+			   (insert-image
+			    (create-image
+			     file (watch-directory--image-type) nil
+			     :max-width
+			     (truncate
+			      (* 0.95 (- (nth 2 edges) (nth 0 edges))))
+			     :max-height
+			     (truncate
+			      (* 0.7 (- (nth 3 edges) (nth 1 edges)))))
+			    (format "<img src=%S>" file))
+			   (put-text-property start (point) 'help-echo file))
 			 (insert "\n\n")
 			 (when separator
 			   (insert separator)))))
@@ -124,9 +127,10 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 (defun watch-directory--find-crop (buffer dir match &optional ignore-files)
   (with-current-buffer buffer
     (or watch-directory--crop-factor
-	(when-let* ((files (seq-take (seq-difference
-				      (directory-files dir t match)
-				      ignore-files)
+	(when-let* ((files (seq-take (reverse
+				      (seq-difference
+				       (directory-files dir t match)
+				       ignore-files))
 				     10))
 		    (crop (meme--find-crop files)))
 	  ;; If we have a reasonable number of files, then cache the
