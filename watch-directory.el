@@ -119,7 +119,8 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 			      (* 0.7 (- (nth 3 edges) (nth 1 edges)))))
 			    (format "<img src=%S>" file))
 			   (put-text-property start (point) 'help-echo file)
-			   (put-text-property start (point) 'original-image file))
+			   (plist-put (cdr (get-text-property start 'display))
+				      :original-file file))
 			 (insert "\n\n")
 			 (when separator
 			   (insert separator)))))
