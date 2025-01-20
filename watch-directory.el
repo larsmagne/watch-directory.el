@@ -26,6 +26,7 @@
 ;;; Code:
 
 (require 'meme)
+(require 'exif)
 
 (defvar watch-directory-rescale nil)
 (defvar watch-directory-trim-fuzz "4%")
@@ -116,7 +117,11 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 			      (* 0.95 (- (nth 2 edges) (nth 0 edges))))
 			     :max-height
 			     (truncate
-			      (* 0.7 (- (nth 3 edges) (nth 1 edges)))))
+			      (* 0.7 (- (nth 3 edges) (nth 1 edges))))
+			     :rotation
+			     (exif-orientation
+			      (ignore-error exif-error
+				(exif-parse-file file))))
 			    (format "<img src=%S>" file))
 			   (put-text-property start (point) 'help-echo file)
 			   (plist-put (cdr (get-text-property start 'display))
