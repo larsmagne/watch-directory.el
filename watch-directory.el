@@ -122,7 +122,7 @@ If MATCH, insert the files that match this name.  Defaults to .JPG."
 			     (exif-orientation
 			      (ignore-error exif-error
 				(exif-parse-file file))))
-			    (format "<img src=%S>" file))
+			    (format "<img src=%S>" (concat "file://" file)))
 			   (put-text-property start (point) 'help-echo file)
 			   (plist-put (cdr (get-text-property start 'display))
 				      :original-file file))
